@@ -85,9 +85,23 @@ export class AnalyticsEngine {
   private datasets: Map<string, any[]> = new Map();
   private datasetMetadata: Map<string, DatasetMetadata> = new Map();
   private useAISentiment: boolean = true;
+  private datasetsLoaded: boolean = false;
 
   constructor() {
-    this.loadDatasets();
+    // Don't load datasets in constructor to avoid blocking server startup
+    // They will be lazy-loaded when first needed
+  }
+
+  private ensureDatasetsLoaded(): void {
+    if (!this.datasetsLoaded) {
+      try {
+        this.loadDatasets();
+        this.datasetsLoaded = true;
+      } catch (error) {
+        console.error("Failed to load datasets:", error);
+        // Continue without datasets - they can be uploaded dynamically
+      }
+    }
   }
 
   addCustomDataset(name: string, data: any[], platform: string): void {
@@ -104,6 +118,7 @@ export class AnalyticsEngine {
   }
 
   getUploadedDatasets(): DatasetMetadata[] {
+    this.ensureDatasetsLoaded(); // Lazy-load datasets if needed
     return Array.from(this.datasetMetadata.values())
       .filter(meta => meta.isUploaded)
       .sort((a, b) => {
@@ -580,6 +595,7 @@ Return ONLY valid JSON object.`
   }
 
   async getAnalytics(datasetName: string): Promise<AnalyticsData> {
+    this.ensureDatasetsLoaded(); // Lazy-load datasets if needed
     const data = this.datasets.get(datasetName) || [];
     log(`Analyzing dataset: ${datasetName}, records: ${data.length}`);
 
@@ -763,6 +779,7 @@ Return ONLY valid JSON object.`
   }
 
   async getTrends(datasetName: string, limit: number = 10): Promise<TrendsData> {
+    this.ensureDatasetsLoaded(); // Lazy-load datasets if needed
     const data = this.datasets.get(datasetName) || [];
 
     const trendingContent: TrendingItem[] = [];
@@ -857,6 +874,7 @@ Return ONLY valid JSON object.`
   }
 
   getDatasetList(): Array<{ id: string; name: string; displayName: string; type: string; recordCount: number }> {
+    this.ensureDatasetsLoaded(); // Lazy-load datasets if needed
     return Array.from(this.datasetMetadata.values()).map(meta => ({
       id: meta.name,
       name: meta.name,
@@ -871,6 +889,7 @@ Return ONLY valid JSON object.`
     text: string;
     analysis: DetailedSentiment;
   }>> {
+    this.ensureDatasetsLoaded(); // Lazy-load datasets if needed
     const data = this.datasets.get(datasetName) || [];
     const items = data.slice(0, limit);
     const results: Array<{ id: string; text: string; analysis: DetailedSentiment }> = [];
