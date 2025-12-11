@@ -1,4 +1,7 @@
-﻿import express, { type Request, type Response, type NextFunction } from "express";
+﻿import { logger } from './utils/logger';
+export const log = logger;
+
+import express, { type Request, type Response, type NextFunction } from "express";
 import { createServer } from "http";
 import { setupVite } from "./vite";
 import { setupRoutes } from "./routes";
@@ -89,3 +92,4 @@ startServer().catch((err) => {
   console.error("Failed to start server:", err);
   process.exit(1);
 });
+
