@@ -1,0 +1,24 @@
+# Ignore Python files for Railway deployment
+*.py
+pyproject.toml
+uv.lock
+main.py
+script/sam_service.py
+script/stock_service.py
+__pycache__/
+.venv/
+venv/
+
+# Ignore data files
+data/
+attached_assets/
+backups/
+extracted_data/
+*.csv
+*.xlsx
+
+# Ignore temporary files
+tmp/
+temp/
+full_codebase.txt
+
