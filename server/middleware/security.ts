@@ -20,7 +20,9 @@ export function corsMiddleware(req: Request, res: Response, next: NextFunction) 
   
   if (origin && (allowedOrigins.includes('*') || allowedOrigins.some(allowed => {
     if (allowed.includes('*')) {
-      const pattern = allowed.replace(/\*/g, '.*');
+      // Escape regex special characters, then convert * to .*
+      const escaped = allowed.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+      const pattern = escaped.replace(/\*/g, '.*');
       return new RegExp(`^${pattern}$`).test(origin);
     }
     return allowed === origin;
@@ -101,4 +103,3 @@ setInterval(() => {
     }
   }
 }, 60000); // Clean up every minute
-
