@@ -1,0 +1,20 @@
+# SAM Microservice Dependencies
+# Install with: pip install -r requirements-sam.txt
+
+# Core Flask server
+flask>=2.0.0
+
+# Image processing (headless for Replit)
+pillow>=9.0.0
+opencv-python-headless>=4.0.0
+
+# Ultralytics SAM
+ultralytics>=8.0.0
+
+# PyTorch CPU-only (saves disk space - no CUDA libraries)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+torchvision
+
+# Numerical computing
+numpy>=1.20.0

@@ -1,0 +1,64 @@
+﻿# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production
+dist/
+build/
+
+# Environment
+.env
+.env.local
+.env.*
+ENV_COMPLETE.env
+
+# Data & Assets
+attached_assets/
+backups/
+extracted_data/
+data/
+*.csv
+*.xlsx
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!components.json
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+uv.lock
+
+# Replit
+.replit
+replit.nix
+.config/
+.upm/
+.pythonlibs/
+.local/
+
+# Build
+*.trie
+.railway/
+
+# Other
+full_codebase.txt
+tmp/
+temp/
