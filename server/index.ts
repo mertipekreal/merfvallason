@@ -1,4 +1,4 @@
-import express, { type Request, type Response, type NextFunction } from "express";
+﻿import express, { type Request, type Response, type NextFunction } from "express";
 import { createServer } from "http";
 import { setupVite } from "./vite";
 import { setupRoutes } from "./routes";
@@ -24,12 +24,12 @@ app.use(
     resave: false,
     saveUninitialized: false,
     store: new MemoryStore({
-      checkPeriod: 86400000, // 24 hours
+      checkPeriod: 86400000,
     }),
     cookie: {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      maxAge: 1000 * 60 * 60 * 24 * 7,
     },
   })
 );
@@ -37,7 +37,7 @@ app.use(
 // Setup authentication
 setupAuth(app);
 
-// Setup Bull Board (Queue Monitoring)
+// Setup Bull Board
 setupBullBoard(app);
 
 // Setup API routes
@@ -52,21 +52,21 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-// Setup Vite in development or static serving in production
-if (process.env.NODE_ENV === "development") {
-  await setupVite(server, app);
-} else {
-  // Production static file serving
-  const { serveStatic } = await import("./static");
-  serveStatic(app);
-}
+// Setup and start server
+async function startServer() {
+  if (process.env.NODE_ENV === "development") {
+    await setupVite(server, app);
+  } else {
+    const { serveStatic } = await import("./static");
+    serveStatic(app);
+  }
 
-// Start server
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log(`💾 Database: ${db ? "Connected" : "Not configured"}`);
-});
+  server.listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV || "development"}`);
+    console.log(`💾 Database: ${db ? "Connected" : "Not configured"}`);
+  });
+}
 
 // Graceful shutdown
 process.on("SIGTERM", () => {
@@ -85,3 +85,7 @@ process.on("SIGINT", () => {
   });
 });
 
+startServer().catch((err) => {
+  console.error("Failed to start server:", err);
+  process.exit(1);
+});
