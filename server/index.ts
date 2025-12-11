@@ -37,14 +37,38 @@ app.use(
   })
 );
 
+// ⚡ CRITICAL: Health check FIRST (for Railway deployment)
+app.get("/api/health", (_req, res) => {
+  res.json({ 
+    status: "ok", 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development"
+  });
+});
+
 // Setup authentication
-setupAuth(app);
+try {
+  setupAuth(app);
+  console.log("✅ Auth setup complete");
+} catch (err) {
+  console.error("❌ Auth setup failed:", err);
+}
 
 // Setup Bull Board
-setupBullBoard(app);
+try {
+  setupBullBoard(app);
+  console.log("✅ Bull Board setup complete");
+} catch (err) {
+  console.error("❌ Bull Board setup failed:", err);
+}
 
 // Setup API routes
-setupRoutes(app);
+try {
+  setupRoutes(app);
+  console.log("✅ Routes setup complete");
+} catch (err) {
+  console.error("❌ Routes setup failed:", err);
+}
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
@@ -57,18 +81,31 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 
 // Setup and start server
 async function startServer() {
-  if (process.env.NODE_ENV === "development") {
-    await setupVite(server, app);
-  } else {
-    const { serveStatic } = await import("./static");
-    serveStatic(app);
-  }
+  console.log("🔄 Starting server...");
+  console.log(`📊 Environment: ${process.env.NODE_ENV || "development"}`);
+  console.log(`🔌 Port: ${PORT}`);
+  console.log(`💾 Database: ${db ? "Connected" : "Not configured"}`);
+  
+  try {
+    if (process.env.NODE_ENV === "development") {
+      console.log("🔧 Setting up Vite...");
+      await setupVite(server, app);
+    } else {
+      console.log("📦 Setting up static file serving...");
+      const { serveStatic } = await import("./static");
+      serveStatic(app);
+      console.log("✅ Static files configured");
+    }
 
-  server.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
-    console.log(`📊 Environment: ${process.env.NODE_ENV || "development"}`);
-    console.log(`💾 Database: ${db ? "Connected" : "Not configured"}`);
-  });
+    server.listen(PORT, "0.0.0.0", () => {
+      console.log(`\n🎉 SERVER READY!`);
+      console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
+      console.log(`🏥 Health check: http://0.0.0.0:${PORT}/api/health\n`);
+    });
+  } catch (err) {
+    console.error("❌ FATAL ERROR during server startup:", err);
+    throw err;
+  }
 }
 
 // Graceful shutdown
