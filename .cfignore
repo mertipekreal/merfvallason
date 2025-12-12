@@ -1,0 +1,28 @@
+# Cloudflare Pages - Ignore Python files
+*.py
+pyproject.toml
+main.py
+uv.lock
+venv/
+__pycache__/
+
+# Server files (not needed for frontend build)
+server/
+
+# Data files
+data/
+*.csv
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+
+# Backups
+backups/
+attached_assets/
+extracted_data/
+
+# Build artifacts
+dist/index.cjs
+dist/*.trie
+
