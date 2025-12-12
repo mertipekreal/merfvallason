@@ -1,6 +1,7 @@
 import { type Express } from "express";
 import { loadDomains } from "./domains";
 import { requireAuth, requireAdmin } from "./auth";
+import { chatService } from "./domains/core/services/chat-service";
 
 export function setupRoutes(app: Express) {
   console.log("🔌 Setting up API routes...");
@@ -12,6 +13,31 @@ export function setupRoutes(app: Express) {
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || "development"
     });
+  });
+
+  // Direct chat endpoint (for frontend compatibility)
+  app.post("/api/chat/message", async (req, res) => {
+    try {
+      const { message, userId, context } = req.body;
+      
+      const result = await chatService.processCommand({
+        message,
+        context,
+      });
+
+      res.json({
+        success: true,
+        content: result.response,
+        role: 'model',
+        ...result,
+      });
+    } catch (error: any) {
+      console.error('Chat message error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to process chat message',
+      });
+    }
   });
 
   // Load domain-based routes (core, market, creative, valuation)
@@ -26,6 +52,7 @@ export function setupRoutes(app: Express) {
       message: `Route ${req.method} ${req.path} not found`,
       availableEndpoints: [
         "/api/health",
+        "/api/chat/message",
         "/api/core/*",
         "/api/market-domain/*",
         "/api/creative-domain/*",

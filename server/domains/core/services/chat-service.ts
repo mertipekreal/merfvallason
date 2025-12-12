@@ -3,11 +3,11 @@
  * Handles conversational AI interactions
  */
 
-import { GoogleGenerativeAI } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import Anthropic from "@anthropic-ai/sdk";
 
 const gemini = process.env.GOOGLE_AI_API_KEY
-  ? new GoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY })
+  ? new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY })
   : null;
 
 const anthropic = process.env.ANTHROPIC_API_KEY

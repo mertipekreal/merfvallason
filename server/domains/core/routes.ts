@@ -32,6 +32,34 @@ router.post('/chat/command', async (req, res) => {
 });
 
 /**
+ * POST /api/core/chat/message (alias for frontend compatibility)
+ * Process AI chat messages
+ */
+router.post('/chat/message', async (req, res) => {
+  try {
+    const { message, userId, context } = req.body;
+    
+    const result = await chatService.processCommand({
+      message,
+      context,
+    });
+
+    res.json({
+      success: true,
+      content: result.response, // Frontend expects 'content'
+      role: 'model',
+      ...result,
+    });
+  } catch (error: any) {
+    console.error('Chat message error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to process chat message',
+    });
+  }
+});
+
+/**
  * GET /api/core/chat/health
  * Check AI services health
  */
