@@ -315,3 +315,4 @@ Your Business plan ($80/mo) includes:
 - Profiles: ~500/month (safe)
 
 **No additional costs expected!** 🎉
+

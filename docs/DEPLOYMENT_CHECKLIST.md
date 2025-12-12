@@ -182,3 +182,4 @@ Tüm yukarıdaki kutular işaretli mi?
 **Deploy tarihi:** _____  
 **Deploy eden:** _____  
 **Version:** 1.0.0
+
