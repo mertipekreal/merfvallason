@@ -1,0 +1,33 @@
+# Railway Minimal Configuration
+# Copy these to Railway Environment Variables for lightweight deployment
+
+# === CORE (Required) ===
+NODE_ENV=production
+PORT=5000
+SESSION_SECRET=your-strong-random-secret
+
+# === DATABASE (Auto-provided by Railway) ===
+DATABASE_URL=postgresql://...
+
+# === REDIS (Auto-provided by Railway) ===
+UPSTASH_REDIS_URL=rediss://...
+UPSTASH_REDIS_TOKEN=...
+
+# === AI CHAT (Pick ONE) ===
+GOOGLE_AI_API_KEY=your-gemini-key-here
+# ANTHROPIC_API_KEY=leave-commented-to-disable
+# OPENAI_API_KEY=leave-commented-to-disable
+
+# === FEATURE FLAGS (Disable heavy features) ===
+ENABLE_BULL_BOARD=false
+ENABLE_ANALYTICS_ENGINE=false
+ENABLE_AUTO_SCRAPING=false
+ENABLE_MARKET_BOTS=false
+ENABLE_CREATIVE_GENERATION=false
+
+# === CORS ===
+ALLOWED_ORIGINS=https://merfvallason-production.up.railway.app
+
+# === ADMIN ===
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=your-secure-password
