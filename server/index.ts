@@ -1,4 +1,40 @@
-﻿import { logger } from './utils/logger';
+// ============================================================================
+// 🚨 SENTRY MUST BE IMPORTED FIRST! (Before any other imports)
+// ============================================================================
+import * as Sentry from "@sentry/node";
+import { nodeProfilingIntegration } from "@sentry/profiling-node";
+
+// Initialize Sentry IMMEDIATELY
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || "development",
+    tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
+    profilesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
+    integrations: [
+      nodeProfilingIntegration(),
+    ],
+    // Performance Monitoring
+    beforeSend(event, hint) {
+      // Add custom context
+      if (hint.originalException instanceof Error) {
+        event.contexts = {
+          ...event.contexts,
+          app: {
+            name: "DuyguMotor",
+            version: "1.0.0",
+          },
+        };
+      }
+      return event;
+    },
+  });
+  console.log("✅ Sentry initialized successfully!");
+} else {
+  console.warn("⚠️  SENTRY_DSN not found - Error tracking disabled");
+}
+
+import { logger } from './utils/logger';
 export const log = logger;
 
 import express, { type Request, type Response, type NextFunction } from "express";
@@ -12,6 +48,12 @@ import session from "express-session";
 import createMemoryStore from "memorystore";
 
 const app = express();
+
+// Sentry request handler MUST be the first middleware
+if (process.env.SENTRY_DSN) {
+  app.use(Sentry.Handlers.requestHandler());
+  app.use(Sentry.Handlers.tracingHandler());
+}
 const server = createServer(app);
 const PORT = parseInt(process.env.PORT || "5000");
 
@@ -70,9 +112,25 @@ try {
   console.error("❌ Routes setup failed:", err);
 }
 
+// Test endpoint for Sentry
+app.get("/api/sentry-test", (_req, res) => {
+  throw new Error("🧪 Sentry Test Error - If you see this in Sentry, it's working!");
+});
+
+// Sentry error handler MUST be before other error handlers
+if (process.env.SENTRY_DSN) {
+  app.use(Sentry.Handlers.errorHandler());
+}
+
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error("Error:", err);
+  
+  // Send to Sentry if configured
+  if (process.env.SENTRY_DSN) {
+    Sentry.captureException(err);
+  }
+  
   res.status(500).json({ 
     error: "Internal server error", 
     message: process.env.NODE_ENV === "development" ? err.message : undefined 
