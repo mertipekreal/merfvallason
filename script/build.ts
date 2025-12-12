@@ -11,6 +11,8 @@ const allowlist = [
   "@huggingface/inference",
   "@neondatabase/serverless",
   "@octokit/rest",
+  "@sentry/node",
+  "@sentry/profiling-node",
   "@upstash/redis",
   "adm-zip",
   "apify-client",
