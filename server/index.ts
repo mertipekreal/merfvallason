@@ -3,19 +3,16 @@
 // ============================================================================
 console.log("🔍 [SENTRY] Starting Sentry initialization...");
 console.log("🔍 [SENTRY] SENTRY_DSN exists?", !!process.env.SENTRY_DSN);
-console.log("🔍 [SENTRY] SENTRY_DSN value:", process.env.SENTRY_DSN ? `${process.env.SENTRY_DSN.substring(0, 20)}...` : "NOT SET");
+console.log("🔍 [SENTRY] SENTRY_DSN value:", process.env.SENTRY_DSN ? `${process.env.SENTRY_DSN.substring(0, 30)}...` : "NOT SET");
+console.log("🔍 [SENTRY] NODE_ENV:", process.env.NODE_ENV);
 
-let Sentry: any = null;
-let nodeProfilingIntegration: any = null;
+import * as Sentry from "@sentry/node";
+import { nodeProfilingIntegration } from "@sentry/profiling-node";
 
 try {
-  console.log("🔍 [SENTRY] Attempting to import @sentry/node...");
-  Sentry = require("@sentry/node");
-  console.log("✅ [SENTRY] @sentry/node imported successfully");
-  
-  console.log("🔍 [SENTRY] Attempting to import @sentry/profiling-node...");
-  nodeProfilingIntegration = require("@sentry/profiling-node").nodeProfilingIntegration;
-  console.log("✅ [SENTRY] @sentry/profiling-node imported successfully");
+  console.log("🔍 [SENTRY] Sentry imported:", typeof Sentry);
+  console.log("🔍 [SENTRY] Sentry.init:", typeof Sentry.init);
+  console.log("🔍 [SENTRY] nodeProfilingIntegration:", typeof nodeProfilingIntegration);
   
   // Initialize Sentry IMMEDIATELY
   if (process.env.SENTRY_DSN) {
@@ -25,19 +22,12 @@ try {
       environment: process.env.NODE_ENV || "development",
       tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
       profilesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
-      integrations: [
-        nodeProfilingIntegration(),
-      ],
-      // Performance Monitoring
+      integrations: [nodeProfilingIntegration()],
       beforeSend(event: any, hint: any) {
-        // Add custom context
         if (hint.originalException instanceof Error) {
           event.contexts = {
             ...event.contexts,
-            app: {
-              name: "DuyguMotor",
-              version: "1.0.0",
-            },
+            app: { name: "DuyguMotor", version: "1.0.0" },
           };
         }
         return event;
@@ -49,8 +39,8 @@ try {
   }
 } catch (error: any) {
   console.error("❌ [SENTRY] Failed to initialize Sentry:", error.message);
-  console.error("❌ [SENTRY] Error stack:", error.stack);
-  // Continue without Sentry - don't crash the app
+  console.error("❌ [SENTRY] Error name:", error.name);
+  if (error.stack) console.error("❌ [SENTRY] Error stack:", error.stack.substring(0, 500));
 }
 
 import { logger } from './utils/logger';
@@ -69,7 +59,7 @@ import createMemoryStore from "memorystore";
 const app = express();
 
 // Sentry request handler MUST be the first middleware
-if (process.env.SENTRY_DSN && Sentry) {
+if (process.env.SENTRY_DSN) {
   try {
     app.use(Sentry.Handlers.requestHandler());
     app.use(Sentry.Handlers.tracingHandler());
@@ -142,7 +132,7 @@ app.get("/api/sentry-test", (_req, res) => {
 });
 
 // Sentry error handler MUST be before other error handlers
-if (process.env.SENTRY_DSN && Sentry) {
+if (process.env.SENTRY_DSN) {
   try {
     app.use(Sentry.Handlers.errorHandler());
     console.log("✅ Sentry error handler attached");
@@ -156,7 +146,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error("Error:", err);
   
   // Send to Sentry if configured
-  if (process.env.SENTRY_DSN && Sentry) {
+  if (process.env.SENTRY_DSN) {
     try {
       Sentry.captureException(err);
     } catch (sentryError: any) {
