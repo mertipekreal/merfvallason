@@ -131,33 +131,37 @@ app.get("/api/sentry-test", (_req, res) => {
   throw new Error("🧪 Sentry Test Error - If you see this in Sentry, it's working!");
 });
 
-// Sentry error handler MUST be before other error handlers
-if (process.env.SENTRY_DSN) {
-  try {
-    app.use(Sentry.Handlers.errorHandler());
-    console.log("✅ Sentry error handler attached");
-  } catch (error: any) {
-    console.error("❌ Failed to attach Sentry error handler:", error.message);
-  }
-}
-
 // Error handling middleware
+// NOTE: We use manual Sentry.captureException() instead of Sentry.Handlers.errorHandler()
+// to avoid duplicate responses and have better control over error handling
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error("Error:", err);
   
-  // Send to Sentry if configured
+  // Send to Sentry if configured (manual tracking, not automatic handler)
   if (process.env.SENTRY_DSN) {
     try {
-      Sentry.captureException(err);
+      Sentry.captureException(err, {
+        tags: {
+          route: req.path,
+          method: req.method,
+        },
+        extra: {
+          url: req.url,
+        },
+      });
+      console.log("📤 Error sent to Sentry");
     } catch (sentryError: any) {
       console.error("❌ Failed to send error to Sentry:", sentryError.message);
     }
   }
   
-  res.status(500).json({ 
-    error: "Internal server error", 
-    message: process.env.NODE_ENV === "development" ? err.message : undefined 
-  });
+  // Send single response (check if headers already sent to avoid duplicate)
+  if (!res.headersSent) {
+    res.status(500).json({ 
+      error: "Internal server error", 
+      message: process.env.NODE_ENV === "development" ? err.message : undefined 
+    });
+  }
 });
 
 // Setup and start server
