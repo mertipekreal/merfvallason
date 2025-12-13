@@ -5,6 +5,7 @@
 
 import { generateImage } from "./image-generator";
 import { searchDreams } from "./dream-search";
+import { analyzeTrends } from "./trend-analyzer";
 
 export interface ToolDefinition {
   name: string;
@@ -150,12 +151,24 @@ export async function executeTool(toolName: string, params: any): Promise<ToolRe
         }
         
       case "analyze_trends":
-        // Will implement in next step
-        return {
-          success: true,
-          data: { message: "Trend analizi yakında aktif olacak!" },
-          toolName
-        };
+        const trendResult = await analyzeTrends(params.platform || 'tiktok');
+        if (trendResult.success) {
+          return {
+            success: true,
+            data: {
+              message: trendResult.summary,
+              trends: trendResult.trends,
+              count: trendResult.trends?.length || 0
+            },
+            toolName
+          };
+        } else {
+          return {
+            success: false,
+            error: trendResult.error,
+            toolName
+          };
+        }
         
       case "analyze_spotify":
         // Will implement in next step
