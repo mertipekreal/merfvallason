@@ -72,7 +72,7 @@ Araç kullanılacağında şu formatta action öner:
 5. "oluştur", "yap", "üret" görsel/içerik üretimi isteği demek`;
 
 export class ClaudeAIService {
-  private model = "claude-haiku-4-5";
+  private model = "claude-3-5-haiku-20241022";
 
   constructor() {
     console.log(`🤖 Claude AI initialized with model: ${this.model}`);
