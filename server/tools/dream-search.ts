@@ -5,7 +5,7 @@
 
 import { db } from "../db";
 import { dreams } from "../../shared/schema";
-import { or, ilike, sql } from "drizzle-orm";
+import { or, ilike } from "drizzle-orm";
 
 export async function searchDreams(query: string): Promise<{
   success: boolean;
@@ -16,17 +16,19 @@ export async function searchDreams(query: string): Promise<{
   try {
     console.log(`🌙 Rüya aranıyor: ${query}`);
     
-    // Search in dream content and tags
+    if (!query || query.trim() === '') {
+      return {
+        success: false,
+        error: "Arama kelimesi boş olamaz"
+      };
+    }
+
+    // Search in dream content only (tags removed to avoid SQL issues)
     const searchPattern = `%${query}%`;
     const results = await db
       .select()
       .from(dreams)
-      .where(
-        or(
-          ilike(dreams.content, searchPattern),
-          sql`${dreams.tags}::text ILIKE ${searchPattern}`
-        )
-      )
+      .where(ilike(dreams.content, searchPattern))
       .limit(10);
 
     console.log(`✅ ${results.length} rüya bulundu`);
@@ -45,4 +47,3 @@ export async function searchDreams(query: string): Promise<{
     };
   }
 }
-
