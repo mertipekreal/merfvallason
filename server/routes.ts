@@ -1,7 +1,7 @@
 import { type Express } from "express";
 import { loadDomains } from "./domains";
 import { requireAuth, requireAdmin } from "./auth";
-import { chatService } from "./domains/core/services/chat-service";
+import { simpleChat } from "./simple-chat";
 
 export function setupRoutes(app: Express) {
   console.log("🔌 Setting up API routes...");
@@ -18,18 +18,15 @@ export function setupRoutes(app: Express) {
   // Direct chat endpoint (for frontend compatibility)
   app.post("/api/chat/message", async (req, res) => {
     try {
-      const { message, userId, context } = req.body;
-      
-      const result = await chatService.processCommand({
-        message,
-        context,
-      });
+      const { message } = req.body;
+      const response = await simpleChat(message);
 
       res.json({
         success: true,
-        content: result.response,
+        content: response,
         role: 'model',
-        ...result,
+        model: 'claude',
+        timestamp: new Date().toISOString(),
       });
     } catch (error: any) {
       console.error('Chat message error:', error);
@@ -43,25 +40,26 @@ export function setupRoutes(app: Express) {
   // Chat stream endpoint (SSE)
   app.post("/api/chat/stream", async (req, res) => {
     try {
-      const { message, userId, context } = req.body;
+      const { message } = req.body;
       
-      const result = await chatService.processCommand({
-        message,
-        context,
-      });
+      // Set SSE headers
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
 
-      res.json({
-        success: true,
-        content: result.response,
-        role: 'model',
-        ...result,
-      });
+      // Get AI response
+      const response = await simpleChat(message);
+
+      // Send as SSE format
+      res.write(`data: ${JSON.stringify({ type: 'content', data: response })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'final', data: { message: response } })}\n\n`);
+      res.write('data: [DONE]\n\n');
+      res.end();
+      
     } catch (error: any) {
       console.error('Chat stream error:', error);
-      res.status(500).json({
-        success: false,
-        error: error.message || 'Failed to process chat stream',
-      });
+      res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`);
+      res.end();
     }
   });
 
