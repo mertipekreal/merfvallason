@@ -3,8 +3,8 @@ import { loadDomains } from "./domains";
 import { requireAuth, requireAdmin } from "./auth";
 import { simpleChat } from "./simple-chat";
 
-// In-memory chat history
-const chatHistory: Array<{ role: string; content: string; timestamp: string }> = [];
+// In-memory chat history (per user)
+const chatHistoryByUser: Map<string, Array<{ role: string; content: string; timestamp: string }>> = new Map();
 
 export function setupRoutes(app: Express) {
   console.log("🔌 Setting up API routes...");
@@ -21,15 +21,26 @@ export function setupRoutes(app: Express) {
   // Direct chat endpoint (for frontend compatibility)
   app.post("/api/chat/message", async (req, res) => {
     try {
-      const { message } = req.body;
+      const { message, userId = 'default-user' } = req.body;
+      
+      // Get or create user history
+      if (!chatHistoryByUser.has(userId)) {
+        chatHistoryByUser.set(userId, []);
+      }
+      const userHistory = chatHistoryByUser.get(userId)!;
       
       // Add to history
-      chatHistory.push({ role: 'user', content: message, timestamp: new Date().toISOString() });
+      userHistory.push({ role: 'user', content: message, timestamp: new Date().toISOString() });
       
       const response = await simpleChat(message);
 
       // Add AI response to history
-      chatHistory.push({ role: 'model', content: response, timestamp: new Date().toISOString() });
+      userHistory.push({ role: 'model', content: response, timestamp: new Date().toISOString() });
+      
+      // Keep only last 50 messages
+      if (userHistory.length > 50) {
+        userHistory.splice(0, userHistory.length - 50);
+      }
 
       res.json({
         success: true,
@@ -50,10 +61,16 @@ export function setupRoutes(app: Express) {
   // Chat stream endpoint (SSE)
   app.post("/api/chat/stream", async (req, res) => {
     try {
-      const { message } = req.body;
+      const { message, userId = 'default-user' } = req.body;
+      
+      // Get or create user history
+      if (!chatHistoryByUser.has(userId)) {
+        chatHistoryByUser.set(userId, []);
+      }
+      const userHistory = chatHistoryByUser.get(userId)!;
       
       // Add to history
-      chatHistory.push({ role: 'user', content: message, timestamp: new Date().toISOString() });
+      userHistory.push({ role: 'user', content: message, timestamp: new Date().toISOString() });
       
       // Set SSE headers
       res.setHeader('Content-Type', 'text/event-stream');
@@ -64,7 +81,12 @@ export function setupRoutes(app: Express) {
       const response = await simpleChat(message);
 
       // Add AI response to history
-      chatHistory.push({ role: 'model', content: response, timestamp: new Date().toISOString() });
+      userHistory.push({ role: 'model', content: response, timestamp: new Date().toISOString() });
+      
+      // Keep only last 50 messages
+      if (userHistory.length > 50) {
+        userHistory.splice(0, userHistory.length - 50);
+      }
 
       // Send as SSE format
       res.write(`data: ${JSON.stringify({ type: 'content', data: response })}\n\n`);
@@ -81,9 +103,12 @@ export function setupRoutes(app: Express) {
 
   // Chat history endpoint
   app.get("/api/chat/history/:userId", async (req, res) => {
+    const userId = req.params.userId || 'default-user';
+    const userHistory = chatHistoryByUser.get(userId) || [];
+    
     res.status(200).json({
       success: true,
-      history: chatHistory.slice(-50) // Last 50 messages
+      history: userHistory.slice(-50) // Last 50 messages
     });
   });
 
