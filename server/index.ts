@@ -48,7 +48,6 @@ export const log = logger;
 
 import express, { type Request, type Response, type NextFunction } from "express";
 import { createServer } from "http";
-import { setupVite } from "./vite";
 import { setupRoutes } from "./routes";
 import { setupAuth } from "./auth";
 import { db } from "./db";
@@ -174,6 +173,7 @@ async function startServer() {
   try {
     if (process.env.NODE_ENV === "development") {
       console.log("🔧 Setting up Vite...");
+      const { setupVite } = await import("./vite");
       await setupVite(server, app);
     } else {
       console.log("📦 Setting up static file serving...");
