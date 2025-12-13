@@ -1,7 +1,7 @@
 import { type Express } from "express";
 import { loadDomains } from "./domains";
 import { requireAuth, requireAdmin } from "./auth";
-import { chatService } from "./domains/core/services/chat-service";
+import { simpleChat } from "./simple-chat";
 
 export function setupRoutes(app: Express) {
   console.log("🔌 Setting up API routes...");
@@ -18,18 +18,15 @@ export function setupRoutes(app: Express) {
   // Direct chat endpoint (for frontend compatibility)
   app.post("/api/chat/message", async (req, res) => {
     try {
-      const { message, userId, context } = req.body;
-      
-      const result = await chatService.processCommand({
-        message,
-        context,
-      });
+      const { message } = req.body;
+      const response = await simpleChat(message);
 
       res.json({
         success: true,
-        content: result.response,
+        content: response,
         role: 'model',
-        ...result,
+        model: 'ai',
+        timestamp: new Date().toISOString(),
       });
     } catch (error: any) {
       console.error('Chat message error:', error);
@@ -43,18 +40,15 @@ export function setupRoutes(app: Express) {
   // Chat stream endpoint (SSE)
   app.post("/api/chat/stream", async (req, res) => {
     try {
-      const { message, userId, context } = req.body;
-      
-      const result = await chatService.processCommand({
-        message,
-        context,
-      });
+      const { message } = req.body;
+      const response = await simpleChat(message);
 
       res.json({
         success: true,
-        content: result.response,
+        content: response,
         role: 'model',
-        ...result,
+        model: 'ai',
+        timestamp: new Date().toISOString(),
       });
     } catch (error: any) {
       console.error('Chat stream error:', error);
