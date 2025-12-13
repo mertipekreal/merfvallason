@@ -3,6 +3,9 @@ import { loadDomains } from "./domains";
 import { requireAuth, requireAdmin } from "./auth";
 import { simpleChat } from "./simple-chat";
 
+// In-memory chat history
+const chatHistory: Array<{ role: string; content: string; timestamp: string }> = [];
+
 export function setupRoutes(app: Express) {
   console.log("🔌 Setting up API routes...");
 
@@ -19,7 +22,14 @@ export function setupRoutes(app: Express) {
   app.post("/api/chat/message", async (req, res) => {
     try {
       const { message } = req.body;
+      
+      // Add to history
+      chatHistory.push({ role: 'user', content: message, timestamp: new Date().toISOString() });
+      
       const response = await simpleChat(message);
+
+      // Add AI response to history
+      chatHistory.push({ role: 'model', content: response, timestamp: new Date().toISOString() });
 
       res.json({
         success: true,
@@ -42,6 +52,9 @@ export function setupRoutes(app: Express) {
     try {
       const { message } = req.body;
       
+      // Add to history
+      chatHistory.push({ role: 'user', content: message, timestamp: new Date().toISOString() });
+      
       // Set SSE headers
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
@@ -49,6 +62,9 @@ export function setupRoutes(app: Express) {
 
       // Get AI response
       const response = await simpleChat(message);
+
+      // Add AI response to history
+      chatHistory.push({ role: 'model', content: response, timestamp: new Date().toISOString() });
 
       // Send as SSE format
       res.write(`data: ${JSON.stringify({ type: 'content', data: response })}\n\n`);
@@ -67,7 +83,7 @@ export function setupRoutes(app: Express) {
   app.get("/api/chat/history/:userId", async (req, res) => {
     res.status(200).json({
       success: true,
-      history: []
+      history: chatHistory.slice(-50) // Last 50 messages
     });
   });
 

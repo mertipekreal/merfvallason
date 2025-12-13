@@ -148,15 +148,10 @@ export default function AIChatPage() {
         }
       }
       
-      // Keep response visible (don't clear)
-      // await queryClient.refetchQueries({ queryKey: [`/api/chat/history/${DEFAULT_USER_ID}?activeSession=true`] });
-      // Don't clear streamedText - let user see the response!
+      // Refresh history after completion
+      await queryClient.refetchQueries({ queryKey: [`/api/chat/history/${DEFAULT_USER_ID}?activeSession=true`] });
+      setStreamedText("");
       setPendingMessage(null);
-      
-      toast({
-        title: "✅ Cevap alindi!",
-        description: "AI yanit verdi",
-      });
       
     } catch (error: any) {
       toast({
