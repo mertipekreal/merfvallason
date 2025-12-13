@@ -5,7 +5,7 @@
 
 import { db } from "../db";
 import { socialVideos } from "../../shared/schema";
-import { desc, sql } from "drizzle-orm";
+import { desc, sql, eq, and, gt } from "drizzle-orm";
 
 export async function analyzeTrends(platform: string = 'tiktok'): Promise<{
   success: boolean;
@@ -23,7 +23,12 @@ export async function analyzeTrends(platform: string = 'tiktok'): Promise<{
     const trendingVideos = await db
       .select()
       .from(socialVideos)
-      .where(sql`${socialVideos.platform} = ${platform} AND ${socialVideos.createdAt} > ${sevenDaysAgo}`)
+      .where(
+        and(
+          eq(socialVideos.platform, platform),
+          gt(socialVideos.createdAt, sevenDaysAgo)
+        )
+      )
       .orderBy(desc(socialVideos.viewCount))
       .limit(10);
 
@@ -55,5 +60,4 @@ export async function analyzeTrends(platform: string = 'tiktok'): Promise<{
     };
   }
 }
-
 
