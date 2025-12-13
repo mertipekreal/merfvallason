@@ -40,6 +40,22 @@ export function setupRoutes(app: Express) {
     }
   });
 
+  // Chat stream endpoint (SSE)
+  app.post("/api/chat/stream", async (req, res) => {
+    res.status(200).json({
+      success: true,
+      message: "Stream endpoint - using regular chat for now"
+    });
+  });
+
+  // Chat history endpoint
+  app.get("/api/chat/history/:userId", async (req, res) => {
+    res.status(200).json({
+      success: true,
+      history: []
+    });
+  });
+
   // Load domain-based routes (core, market, creative, valuation)
   loadDomains(app).catch(error => {
     console.error("Failed to load domains:", error);
