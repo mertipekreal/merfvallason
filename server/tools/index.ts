@@ -26,6 +26,8 @@ export interface ToolResult {
   toolName: string;
 }
 
+export interface ToolCallResult extends ToolResult {}
+
 // Tool definitions
 export const tools: Record<string, ToolDefinition> = {
   image_generator: {
@@ -85,6 +87,9 @@ export const tools: Record<string, ToolDefinition> = {
   }
 };
 
+// Export tool definitions for Gemini
+export const toolDefinitions = tools;
+
 // Detect tool from message
 export function detectTool(message: string): { toolName: string; params: any } | null {
   const lowerMessage = message.toLowerCase();
@@ -104,6 +109,32 @@ export function detectTool(message: string): { toolName: string; params: any } |
   }
   
   return null;
+}
+
+// Alias for compatibility
+export const detectToolFromMessage = detectTool;
+
+// Validate tool
+export function isValidTool(toolName: string): boolean {
+  return Object.values(tools).some(tool => tool.name === toolName);
+}
+
+// Validate tool arguments
+export function validateToolArgs(toolName: string, args: any): { valid: boolean; error?: string } {
+  const tool = Object.values(tools).find(t => t.name === toolName);
+  
+  if (!tool) {
+    return { valid: false, error: `Unknown tool: ${toolName}` };
+  }
+  
+  // Check required parameters
+  for (const param of tool.parameters) {
+    if (param.required && !args[param.name]) {
+      return { valid: false, error: `Missing required parameter: ${param.name}` };
+    }
+  }
+  
+  return { valid: true };
 }
 
 // Execute tool
