@@ -56,3 +56,4 @@ export async function analyzeTrends(platform: string = 'tiktok'): Promise<{
   }
 }
 
+

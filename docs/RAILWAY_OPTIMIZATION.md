@@ -233,3 +233,4 @@ Eğer free tier dolarsa:
 - [Railway Free Tier](https://railway.app/legal/fair-use)
 - [Optimize Node.js](https://nodejs.org/en/docs/guides/simple-profiling/)
 
+
