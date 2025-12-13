@@ -156,7 +156,7 @@ export async function executeTool(toolName: string, params: any): Promise<ToolRe
           return {
             success: true,
             data: {
-              message: trendResult.summary,
+              summary: trendResult.summary,
               trends: trendResult.trends,
               count: trendResult.trends?.length || 0
             },

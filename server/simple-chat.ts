@@ -1,9 +1,10 @@
 /**
  * SIMPLE CHAT - With Tool Calling Support
- * Claude AI + Tool execution
+ * Claude AI (primary) + Gemini AI (fallback/analysis) + Tool execution
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import { geminiAI } from "./domains/core/services/gemini-ai-service";
 import { detectTool, executeTool } from "./tools";
 
 const anthropic = process.env.ANTHROPIC_API_KEY
@@ -11,10 +12,6 @@ const anthropic = process.env.ANTHROPIC_API_KEY
   : null;
 
 export async function simpleChat(message: string): Promise<string> {
-  if (!anthropic) {
-    throw new Error("ANTHROPIC_API_KEY bulunamadi!");
-  }
-
   try {
     console.log(`💬 Chat: ${message.substring(0, 50)}...`);
     
@@ -47,7 +44,24 @@ export async function simpleChat(message: string): Promise<string> {
       }
     }
     
-    // Regular chat (no tool)
+    // Decide which AI to use
+    const lowerMessage = message.toLowerCase();
+    const useGemini = ['analiz', 'analyze', 'trend', 'veri', 'data', 'istatistik'].some(keyword => 
+      lowerMessage.includes(keyword)
+    );
+
+    // Use Gemini for analysis/data tasks
+    if (useGemini && process.env.GOOGLE_AI_API_KEY) {
+      console.log(`🤖 Using Gemini AI for analysis`);
+      const geminiResult = await geminiAI.chat("default-user", message);
+      return geminiResult.message;
+    }
+
+    // Use Claude for regular chat
+    if (!anthropic) {
+      throw new Error("ANTHROPIC_API_KEY bulunamadi!");
+    }
+
     const response = await anthropic.messages.create({
       model: "claude-3-5-haiku-20241022",
       max_tokens: 1024,
