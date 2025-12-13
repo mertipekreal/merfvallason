@@ -4,7 +4,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
-import { geminiAIService } from "./gemini-ai-service";
+import { geminiAI } from "./gemini-ai-service";
 
 const anthropic = process.env.ANTHROPIC_API_KEY
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -81,7 +81,7 @@ export class ChatService {
     }
 
     // Use the dedicated Gemini AI service
-    const result = await geminiAIService.chat("default-user", message);
+    const result = await geminiAI.chat("default-user", message);
 
     return {
       response: result.message,
