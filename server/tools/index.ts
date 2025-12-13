@@ -6,6 +6,7 @@
 import { generateImage } from "./image-generator";
 import { searchDreams } from "./dream-search";
 import { analyzeTrends } from "./trend-analyzer";
+import { analyzeSpotify } from "./spotify-analyzer";
 
 export interface ToolDefinition {
   name: string;
@@ -92,23 +93,49 @@ export const toolDefinitions = tools;
 
 // Detect tool from message
 export function detectTool(message: string): { toolName: string; params: any } | null {
-  const lowerMessage = message.toLowerCase();
+  const lowerMessage = message.toLowerCase().trim();
   
   for (const [key, tool] of Object.entries(tools)) {
     for (const trigger of tool.trigger) {
-      if (lowerMessage.includes(trigger.toLowerCase())) {
-        // Extract parameters (simple implementation)
-        const prompt = message.replace(new RegExp(trigger, 'i'), '').trim();
+      const triggerLower = trigger.toLowerCase();
+      
+      // Check if message starts with trigger
+      if (lowerMessage.startsWith(triggerLower)) {
+        // Extract query after trigger
+        const query = message.substring(trigger.length).trim();
+        
+        // Use query or provide defaults based on tool
+        const effectiveQuery = query || getDefaultQuery(tool.name);
         
         return {
           toolName: tool.name,
-          params: { prompt, query: prompt, platform: 'tiktok' }
+          params: { 
+            prompt: effectiveQuery, 
+            query: effectiveQuery, 
+            platform: 'tiktok' 
+          }
         };
       }
     }
   }
   
   return null;
+}
+
+// Helper function to provide default queries
+function getDefaultQuery(toolName: string): string {
+  switch (toolName) {
+    case 'search_dreams':
+      return 'son rüyalar'; // Default dream search
+    case 'generate_image':
+      return 'güzel bir manzara'; // Default image prompt
+    case 'analyze_spotify':
+      return 'popüler şarkılar'; // Default spotify query
+    case 'analyze_trends':
+      return 'viral içerikler'; // Default trend query
+    default:
+      return 'genel';
+  }
 }
 
 // Alias for compatibility
@@ -202,12 +229,20 @@ export async function executeTool(toolName: string, params: any): Promise<ToolRe
         }
         
       case "analyze_spotify":
-        // Will implement in next step
-        return {
-          success: true,
-          data: { message: "Spotify analizi yakında aktif olacak!" },
-          toolName
-        };
+        const spotifyResult = await analyzeSpotify(params.query || params.prompt);
+        if (spotifyResult.success) {
+          return {
+            success: true,
+            data: spotifyResult.data,
+            toolName
+          };
+        } else {
+          return {
+            success: false,
+            error: spotifyResult.error,
+            toolName
+          };
+        }
         
       default:
         return {
