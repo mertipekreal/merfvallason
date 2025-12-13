@@ -3,12 +3,8 @@
  * Handles conversational AI interactions
  */
 
-import { GoogleGenAI } from "@google/genai";
 import Anthropic from "@anthropic-ai/sdk";
-
-const gemini = process.env.GOOGLE_AI_API_KEY
-  ? new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY })
-  : null;
+import { geminiAIService } from "./gemini-ai-service";
 
 const anthropic = process.env.ANTHROPIC_API_KEY
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -80,44 +76,16 @@ export class ChatService {
     context?: string,
     history: ChatMessage[] = []
   ): Promise<{ response: string; model: string; timestamp: string }> {
-    if (!gemini) {
+    if (!process.env.GOOGLE_AI_API_KEY) {
       throw new Error("Gemini AI not configured");
     }
 
-    const model = gemini.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-
-    // Build conversation history
-    const conversationHistory = history.map(msg => ({
-      role: msg.role === "user" ? "user" : "model",
-      parts: [{ text: msg.content }],
-    }));
-
-    // Add system context if provided
-    let systemPrompt = "Sen DuyguMotor AI asistanısın. Türkçe ve İngilizce konuşabilirsin. Sosyal medya analizi, müzik trendleri, rüya yorumu ve görsel üretimi konularında uzmansın.";
-    if (context) {
-      systemPrompt += `\n\nBağlam: ${context}`;
-    }
-
-    const chat = model.startChat({
-      history: [
-        {
-          role: "user",
-          parts: [{ text: systemPrompt }],
-        },
-        {
-          role: "model",
-          parts: [{ text: "Anladım, yardımcı olmaya hazırım!" }],
-        },
-        ...conversationHistory,
-      ],
-    });
-
-    const result = await chat.sendMessage(message);
-    const response = result.response.text();
+    // Use the dedicated Gemini AI service
+    const result = await geminiAIService.chat("default-user", message);
 
     return {
-      response,
-      model: "gemini-2.0-flash-exp",
+      response: result.message,
+      model: "gemini-2.5-pro",
       timestamp: new Date().toISOString(),
     };
   }
@@ -178,9 +146,9 @@ export class ChatService {
     status: string;
   }> {
     return {
-      gemini: !!gemini && !!process.env.GOOGLE_AI_API_KEY,
+      gemini: !!process.env.GOOGLE_AI_API_KEY,
       claude: !!anthropic && !!process.env.ANTHROPIC_API_KEY,
-      status: gemini || anthropic ? "available" : "no_api_keys",
+      status: process.env.GOOGLE_AI_API_KEY || anthropic ? "available" : "no_api_keys",
     };
   }
 }
