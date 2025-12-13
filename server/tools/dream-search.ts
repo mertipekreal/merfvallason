@@ -5,7 +5,7 @@
 
 import { db } from "../db";
 import { dreams } from "../../shared/schema";
-import { sql, or, like } from "drizzle-orm";
+import { or, ilike, sql } from "drizzle-orm";
 
 export async function searchDreams(query: string): Promise<{
   success: boolean;
@@ -23,7 +23,7 @@ export async function searchDreams(query: string): Promise<{
       .from(dreams)
       .where(
         or(
-          sql`${dreams.content} ILIKE ${searchPattern}`,
+          ilike(dreams.content, searchPattern),
           sql`${dreams.tags}::text ILIKE ${searchPattern}`
         )
       )
