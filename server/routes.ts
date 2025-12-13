@@ -42,10 +42,27 @@ export function setupRoutes(app: Express) {
 
   // Chat stream endpoint (SSE)
   app.post("/api/chat/stream", async (req, res) => {
-    res.status(200).json({
-      success: true,
-      message: "Stream endpoint - using regular chat for now"
-    });
+    try {
+      const { message, userId, context } = req.body;
+      
+      const result = await chatService.processCommand({
+        message,
+        context,
+      });
+
+      res.json({
+        success: true,
+        content: result.response,
+        role: 'model',
+        ...result,
+      });
+    } catch (error: any) {
+      console.error('Chat stream error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to process chat stream',
+      });
+    }
   });
 
   // Chat history endpoint
