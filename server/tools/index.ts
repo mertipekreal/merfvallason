@@ -4,6 +4,7 @@
  */
 
 import { generateImage } from "./image-generator";
+import { searchDreams } from "./dream-search";
 
 export interface ToolDefinition {
   name: string;
@@ -129,12 +130,24 @@ export async function executeTool(toolName: string, params: any): Promise<ToolRe
         }
         
       case "search_dreams":
-        // Will implement in next step
-        return {
-          success: true,
-          data: { message: "Rüya arama yakında aktif olacak!" },
-          toolName
-        };
+        const dreamResult = await searchDreams(params.query);
+        if (dreamResult.success) {
+          return {
+            success: true,
+            data: {
+              message: `${dreamResult.count} rüya bulundu`,
+              dreams: dreamResult.dreams,
+              count: dreamResult.count
+            },
+            toolName
+          };
+        } else {
+          return {
+            success: false,
+            error: dreamResult.error,
+            toolName
+          };
+        }
         
       case "analyze_trends":
         // Will implement in next step
