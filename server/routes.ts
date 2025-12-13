@@ -112,6 +112,48 @@ export function setupRoutes(app: Express) {
     });
   });
 
+  // Chat command endpoint (for tool calling like @gorsel, @ruya)
+  app.post("/api/chat/command", async (req, res) => {
+    try {
+      const { command, query, userId = 'default-user' } = req.body;
+      
+      // Get or create user history
+      if (!chatHistoryByUser.has(userId)) {
+        chatHistoryByUser.set(userId, []);
+      }
+      const userHistory = chatHistoryByUser.get(userId)!;
+      
+      // Add command to history
+      const commandMessage = query ? `${command} ${query}` : command;
+      userHistory.push({ role: 'user', content: commandMessage, timestamp: new Date().toISOString() });
+      
+      // Process command (will be handled by AI with tool calling)
+      const response = await simpleChat(commandMessage);
+      
+      // Add AI response to history
+      userHistory.push({ role: 'model', content: response, timestamp: new Date().toISOString() });
+      
+      // Keep only last 50 messages
+      if (userHistory.length > 50) {
+        userHistory.splice(0, userHistory.length - 50);
+      }
+      
+      res.json({
+        success: true,
+        command,
+        query,
+        response,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error: any) {
+      console.error('Chat command error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to process command',
+      });
+    }
+  });
+
   // Load domain-based routes (core, market, creative, valuation)
   loadDomains(app).catch(error => {
     console.error("Failed to load domains:", error);
@@ -125,6 +167,9 @@ export function setupRoutes(app: Express) {
       availableEndpoints: [
         "/api/health",
         "/api/chat/message",
+        "/api/chat/stream",
+        "/api/chat/command",
+        "/api/chat/history/:userId",
         "/api/core/*",
         "/api/market-domain/*",
         "/api/creative-domain/*",
@@ -138,4 +183,3 @@ export function setupRoutes(app: Express) {
 
 // Export middleware for use in other files
 export { requireAuth, requireAdmin };
-
