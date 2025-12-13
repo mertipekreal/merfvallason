@@ -3,6 +3,8 @@
  * AI can call these tools via commands like @gorsel, @ruya, @trend
  */
 
+import { generateImage } from "./image-generator";
+
 export interface ToolDefinition {
   name: string;
   description: string;
@@ -107,12 +109,24 @@ export async function executeTool(toolName: string, params: any): Promise<ToolRe
   try {
     switch (toolName) {
       case "generate_image":
-        // Will implement in next step
-        return {
-          success: true,
-          data: { message: "Görsel oluşturma yakında aktif olacak!" },
-          toolName
-        };
+        const imageResult = await generateImage(params.prompt);
+        if (imageResult.success) {
+          return {
+            success: true,
+            data: { 
+              message: "Görsel oluşturuldu!",
+              imageUrl: imageResult.imageUrl,
+              prompt: params.prompt
+            },
+            toolName
+          };
+        } else {
+          return {
+            success: false,
+            error: imageResult.error,
+            toolName
+          };
+        }
         
       case "search_dreams":
         // Will implement in next step
